@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  
+  # ECS Cluster
+  ECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: 'Dev'
+
+  # ECS Task Definition
+  ECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: 'dev-task-1'
+      ContainerDefinitions:
+        - Name: 'jenkins-example'
+          Image: '686588766365.dkr.ecr.ap-south-1.amazonaws.com/jenkins-example:latest'
+          Memory: 512
+          Cpu: 256
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+          Essential: true
+
+  # ECS Service
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      TaskDefinition: !Ref ECSTaskDefinition
+      LaunchType: 'FARGATE'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - 'subnet-0dd225b84f7f1910e'  # Replace with your subnet ID(s)
+          AssignPublicIp: 'ENABLED'
+
+Outputs:
+  ECSClusterName:
+    Description: "ECS Cluster Name"
+    Value: !Ref ECSCluster
+
+  ECSServiceName:
+    Description: "ECS Service Name"
+    Value: !Ref ECSService
+
+  ECSTaskDefinitionName:
+    Description: "ECS Task Definition Name"
+    Value: !Ref ECSTaskDefinition
