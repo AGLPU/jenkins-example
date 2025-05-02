@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Server Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+    .datetime {
+      font-size: 1.5em;
+      color: #007acc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to My Server</h1>
+  <p>Current Date and Time:</p>
+  <div class="datetime" id="datetime">Loading...</div>
+
+  <script>
+    function updateDateTime() {
+      const now = new Date();
+      document.getElementById("datetime").textContent = now.toString();
+    }
+    updateDateTime(); // initial call
+    setInterval(updateDateTime, 1000); // update every second
+  </script>
+</body>
+</html>
