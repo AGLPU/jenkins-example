@@ -3,8 +3,8 @@ pipeline {
 
   environment {
     AWS_DEFAULT_REGION = 'ap-south-1'
-    ECS_CLUSTER = 'dev'
-    ECS_SERVICE = 'jenkins-example'
+    ECS_CLUSTER = 'Dev'
+    ECS_SERVICE = 'ecs-4-ECSService-z7wZlnUXOnhj'
     ECS_TASK_DEFINITION = 'dev-task-1'
     AWS_ACCOUNT_ID = '686588766365'
     AWS_ECR_REPO = 'jenkins-example'
