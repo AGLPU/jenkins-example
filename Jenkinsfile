@@ -1,47 +1,66 @@
-pipeline:
-  agent:
-    label: 'slave1' 
+pipeline {
+  agent { label 'slave1' }
 
-  environment:
-    AWS_DEFAULT_REGION: 'ap-south-1'  
-    ECS_CLUSTER: 'dev'
-    ECS_SERVICE: 'jenkins-example'
-    ECS_TASK_DEFINITION: 'dev-task-1'
-    AWS_ACCOUNT_ID: '686588766365'
-    AWS_ECR_REPO: 'jenkins-example'
-    APP_NAME: 'jenkins-example'
-    IMAGE_TAG: "${GIT_COMMIT}"  
+  environment {
+    AWS_DEFAULT_REGION = 'ap-south-1'
+    ECS_CLUSTER = 'dev'
+    ECS_SERVICE = 'jenkins-example'
+    ECS_TASK_DEFINITION = 'dev-task-1'
+    AWS_ACCOUNT_ID = '686588766365'
+    AWS_ECR_REPO = 'jenkins-example'
+    APP_NAME = 'jenkins-example'
+  }
 
-  stages:
-    - stage: Checkout
-      steps:
-        - checkout scm
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        script {
+          env.IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        }
+      }
+    }
 
-    - stage: Build Docker Image
-      steps:
-        - script: |
-            docker.build("your-image-name:${IMAGE_TAG}")
+    stage('Build Docker Image') {
+      steps {
+        script {
+          docker.build("${APP_NAME}:${IMAGE_TAG}")
+        }
+      }
+    }
 
-    - stage: Push to ECR
-      steps:
-        - script: |
+    stage('Push to ECR') {
+      steps {
+        script {
+          sh """
             aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
-            docker tag your-image-name:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:${IMAGE_TAG}
+            docker tag ${APP_NAME}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:${IMAGE_TAG}
             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:${IMAGE_TAG}
+          """
+        }
+      }
+    }
 
-    - stage: Deploy to ECS Fargate
-      steps:
-        - script: |
-            ecs-cli configure --region $AWS_DEFAULT_REGION --access-key $AWS_ACCESS_KEY_ID --secret-key $AWS_SECRET_ACCESS_KEY --cluster $ECS_CLUSTER
-            ecs-cli compose --file docker-compose.yml --project-name ${APP_NAME} service up
+    stage('Deploy to ECS') {
+      steps {
+        script {
+          sh """
+            aws ecs update-service \
+              --cluster ${ECS_CLUSTER} \
+              --service ${ECS_SERVICE} \
+              --force-new-deployment
+          """
+        }
+      }
+    }
+  }
 
-  triggers:
-    - git:
-        branches:
-          - develop  #Trigger deployment on commits to the "develop" branch
-
-  post:
-    success:
-      - echo 'Deployment to ECS Fargate was successful.'
-    failure:
-      - echo 'Deployment failed.'
+  post {
+    success {
+      echo '✅ Deployment to ECS Fargate was successful.'
+    }
+    failure {
+      echo '❌ Deployment failed.'
+    }
+  }
+}
