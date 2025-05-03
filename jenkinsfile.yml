@@ -38,7 +38,7 @@ pipeline:
   triggers:
     - git:
         branches:
-          - develop  # Trigger deployment on commits to the "develop" branch
+          - develop  #Trigger deployment on commits to the "develop" branch
 
   post:
     success:
