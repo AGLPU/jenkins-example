@@ -24,14 +24,15 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          docker.build("${APP_NAME}:${IMAGE_TAG}")
+         sh "docker build -t ${APP_NAME}:${IMAGE_TAG} ."
         }
       }
     }
 
     stage('Push to ECR') {
       steps {
-        script {
+         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                          credentialsId: 'd40eb6b3-10b1-4fc7-bf12-1ddf551583ff']]) {
           sh """
             aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
             docker tag ${APP_NAME}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:${IMAGE_TAG}
@@ -41,18 +42,21 @@ pipeline {
       }
     }
 
-    stage('Deploy to ECS') {
-      steps {
-        script {
-          sh """
-            aws ecs update-service \
-              --cluster ${ECS_CLUSTER} \
-              --service ${ECS_SERVICE} \
-              --force-new-deployment
-          """
-        }
-      }
+  stage('Deploy to ECS') {
+   steps {
+     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                      credentialsId: 'd40eb6b3-10b1-4fc7-bf12-1ddf551583ff']]) {
+      sh '''
+        aws ecs update-service \
+          --cluster $ECS_CLUSTER \
+          --service $ECS_SERVICE \
+          --force-new-deployment \
+          --region $AWS_DEFAULT_REGION
+      '''
     }
+  }
+}
+
   }
 
   post {
