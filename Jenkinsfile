@@ -1,16 +1,16 @@
 pipeline:
   agent:
-    label: 'slave1' # Specify your Jenkins agent
+    label: 'slave1' 
 
   environment:
-    AWS_DEFAULT_REGION: 'ap-south-1'  # Set your region
+    AWS_DEFAULT_REGION: 'ap-south-1'  
     ECS_CLUSTER: 'dev'
     ECS_SERVICE: 'jenkins-example'
     ECS_TASK_DEFINITION: 'dev-task-1'
     AWS_ACCOUNT_ID: '686588766365'
     AWS_ECR_REPO: 'jenkins-example'
     APP_NAME: 'jenkins-example'
-    IMAGE_TAG: "${GIT_COMMIT}"  # Use commit hash as image tag
+    IMAGE_TAG: "${GIT_COMMIT}"  
 
   stages:
     - stage: Checkout
