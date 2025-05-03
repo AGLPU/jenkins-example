@@ -1,50 +1,61 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
-  
-  # ECS Cluster
+
   ECSCluster:
     Type: 'AWS::ECS::Cluster'
     Properties:
       ClusterName: 'Dev'
 
-  # ECS Task Definition
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecsTaskExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
   ECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       Family: 'dev-task-1'
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: 'jenkins-example'
           Image: '686588766365.dkr.ecr.ap-south-1.amazonaws.com/jenkins-example:latest'
-          Memory: 512
-          Cpu: 256
+          Essential: true
           PortMappings:
             - ContainerPort: 80
-              HostPort: 80
-          Essential: true
 
-  # ECS Service
   ECSService:
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster: !Ref ECSCluster
       DesiredCount: 1
-      TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: 'FARGATE'
+      TaskDefinition: !Ref ECSTaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
           Subnets:
-            - 'subnet-0dd225b84f7f1910e'  # Replace with your subnet ID(s)
-          AssignPublicIp: 'ENABLED'
+            - 'subnet-0dd225b84f7f1910e'  # Replace with valid subnet
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - 'sg-0b0d59805aa9fa589'    # Replace with a valid security group ID
 
 Outputs:
   ECSClusterName:
-    Description: "ECS Cluster Name"
     Value: !Ref ECSCluster
-
   ECSServiceName:
-    Description: "ECS Service Name"
     Value: !Ref ECSService
-
   ECSTaskDefinitionName:
-    Description: "ECS Task Definition Name"
     Value: !Ref ECSTaskDefinition
