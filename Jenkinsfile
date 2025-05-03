@@ -24,7 +24,10 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-         sh "docker build -t ${APP_NAME}:${IMAGE_TAG} ."
+         sh """
+          docker build -t ${APP_NAME}:${IMAGE_TAG} .
+          docker tag ${APP_NAME}:${IMAGE_TAG} ${APP_NAME}:latest
+          """
         }
       }
     }
@@ -36,6 +39,7 @@ pipeline {
           sh """
             aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
             docker tag ${APP_NAME}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:${IMAGE_TAG}
+            docker tag ${APP_NAME}:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:latest
             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:${IMAGE_TAG}
             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_ECR_REPO}:latest
           """
